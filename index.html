@@ -80,9 +80,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 .sm{font-size:11px;color:var(--g);cursor:pointer;background:none;border:none;font-family:inherit;font-weight:600}
 .sl{font-size:10px;font-weight:700;color:var(--t2);letter-spacing:1px;text-transform:uppercase;margin:16px 0 8px 4px}
 /* TRANSACTION ROW - PREMIUM */
-.tx{display:flex;align-items:center;gap:12px;padding:13px;background:var(--c1);border:1px solid var(--bd);border-radius:16px;margin-bottom:8px;transition:all .15s;position:relative;overflow:hidden}
+.tx{display:flex;align-items:center;gap:12px;padding:13px;background:var(--c1);border:1px solid var(--bd);border-radius:16px;margin-bottom:8px;transition:all .15s;position:relative;overflow:hidden;touch-action:pan-y}
 .tx:active{transform:scale(.98)}
 .tx:hover{border-color:rgba(34,197,94,.25)}
+.tx-swipe-wrap{position:relative;overflow:hidden;border-radius:16px;margin-bottom:8px}
+.tx-delete-bg{position:absolute;right:0;top:0;bottom:0;width:80px;background:linear-gradient(90deg,transparent,#EF4444);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;border-radius:16px;font-size:14px;color:#fff;font-weight:700}
+.tx-inner{display:flex;align-items:center;gap:12px;padding:13px;background:var(--c1);border:1px solid var(--bd);border-radius:16px;position:relative;z-index:1;transition:transform .2s ease;touch-action:pan-y}
 .tx-i{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .tx-i.i{background:rgba(34,197,94,.08)}.tx-i.e{background:rgba(239,68,68,.08)}
 .tx-f{flex:1;min-width:0}.tx-n{font-size:13px;font-weight:600}.tx-s{font-size:10px;color:var(--t2);margin-top:2px}
@@ -374,7 +377,8 @@ const vals=days.map(d=>txns.filter(t=>t.type==='e'&&new Date(t.date).toDateStrin
 const mx=Math.max(...vals,1);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 if(vals.some(v=>v>0)){document.getElementById('barW').style.display='block';document.getElementById('barR').innerHTML=days.map((d,i)=>`<div class="bar-c"><div class="bar-b" style="height:${Math.max(vals[i]/mx*80,2)}px"></div><div class="bar-l">${dn[d.getDay()]}</div></div>`).join('')}else document.getElementById('barW').style.display='none';
 // Recent
-const rc=txns.slice(0,5);document.getElementById('rTx').innerHTML=rc.length===0?'<div class="emp"><div class="emp-i">💳</div><h3>No transactions yet</h3><p>Tap + to add your first</p></div>':rc.map(t=>{const ii=t.type==='i';const ds=isD(t.date)?'Today':new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});return`<div class="tx"><div class="tx-i ${ii?'i':'e'}">${ii?'💼':pI(t.category)}</div><div class="tx-f"><div class="tx-n">${esc(t.note||t.category)}</div><div class="tx-s">${t.category} · ${ds}</div></div><div class="tx-a ${ii?'i':'e'}">${ii?'+':'-'} ${fR(t.amount)}</div></div>`}).join('');
+const rc=txns.slice(0,5);document.getElementById('rTx').innerHTML=rc.length===0?'<div class="emp"><div class="emp-i">💳</div><h3>No transactions yet</h3><p>Tap + to add your first</p></div>':rc.map(t=>{const ii=t.type==='i';const ds=isD(t.date)?'Today':new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});return swipeTx(t,ii,ds)}).join('');
+initSwipe();
 // Month
 const mS=mI-mE,pct=mI>0?Math.round(mS/mI*100):0;
 document.getElementById('mCd').innerHTML=mI>0||mE>0?`<div class="mc"><div class="mt">📅 ${new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div><div class="mr"><span style="color:var(--t2)">Income</span><span class="mv" style="color:var(--g)">${fR(mI)}</span></div><div class="mr"><span style="color:var(--t2)">Expense</span><span class="mv" style="color:var(--r)">${fR(mE)}</span></div><div class="mr"><span style="color:var(--t2)">Savings</span><span class="mv" style="color:var(--g)">${fR(Math.max(mS,0))}</span></div><div class="mb"><div class="mf" style="width:${mI>0?Math.min(mE/mI*100,100):0}%;background:${mE>mI*.8?'var(--r)':'var(--g)'}"></div></div>${pct>0?`<div class="mn">You've saved ${pct}% of your income 🎉</div>`:''}</div>`:''
@@ -436,8 +440,8 @@ let f=txns;if(tF==='e')f=f.filter(t=>t.type==='e');if(tF==='i')f=f.filter(t=>t.t
 document.getElementById('tTabs').innerHTML=['All','Spent','Received'].map((l,i)=>`<button class="${['all','e','i'][i]===tF?'a':''}" onclick="tF='${['all','e','i'][i]}';rT()">${l}</button>`).join('');
 if(f.length===0){document.getElementById('tL').innerHTML='<div class="emp"><div class="emp-i">📋</div><h3>No transactions</h3></div>';return}
 const gr={};f.forEach(t=>{const dk=isD(t.date)?'Today':new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',weekday:'short'});if(!gr[dk])gr[dk]=[];gr[dk].push(t)});
-let h='';Object.entries(gr).forEach(([dk,ts])=>{h+=`<div class="sl">${dk}</div>`;ts.forEach(t=>{const ii=t.type==='i';h+=`<div class="tx"><div class="tx-i ${ii?'i':'e'}">${ii?'💼':pI(t.category)}</div><div class="tx-f"><div class="tx-n">${esc(t.note||t.category)}</div><div class="tx-s">${t.category}</div></div><div class="tx-a ${ii?'i':'e'}">${ii?'+':'-'} ${fR(t.amount)}</div><button class="tx-x" onclick="txns=txns.filter(x=>x.id!=='${t.id}');sv();rT();rD()">✕</button></div>`})});
-document.getElementById('tL').innerHTML=h}
+let h='';Object.entries(gr).forEach(([dk,ts])=>{h+=`<div class="sl">${dk}</div>`;ts.forEach(t=>{const ii=t.type==='i';h+=swipeTx(t,ii,t.category)})});
+document.getElementById('tL').innerHTML=h;initSwipe()}
 
 // MORE SUBS
 function oS(id){document.getElementById('sub-'+id).classList.add('sh');({profile:rPr,shopHist:rSH,budget:rBu,monthly:rMo,recurring:rRe,categories:rCat})[id]?.()}
@@ -641,6 +645,49 @@ function xCSV(){let csv='Date,Type,Amount,Category,Note\n';txns.forEach(t=>{csv+
 
 // Process recurring
 (function(){const day=new Date().getDate();rec.forEach(r=>{if(r.day===day){const ex=txns.some(t=>isD(t.date)&&t.note===(r.note||r.cat)&&t.amount===r.amt);if(!ex){txns.unshift({id:Date.now().toString(),amount:r.amt,type:r.type,category:r.cat,note:r.note||r.cat,date:new Date().toISOString()});sv()}}})})();
+
+// SWIPE TO DELETE
+function swipeTx(t,ii,sub){
+  return`<div class="tx-swipe-wrap" data-txid="${t.id}"><div class="tx-delete-bg">Delete</div><div class="tx-inner"><div class="tx-i ${ii?'i':'e'}">${ii?'💼':pI(t.category)}</div><div class="tx-f"><div class="tx-n">${esc(t.note||t.category)}</div><div class="tx-s">${sub}</div></div><div class="tx-a ${ii?'i':'e'}">${ii?'+':'-'} ${fR(t.amount)}</div></div></div>`;
+}
+
+function initSwipe(){
+  document.querySelectorAll('.tx-swipe-wrap').forEach(wrap=>{
+    const inner=wrap.querySelector('.tx-inner');
+    let startX=0,currentX=0,swiping=false;
+
+    inner.addEventListener('touchstart',e=>{
+      startX=e.touches[0].clientX;
+      currentX=0;
+      swiping=true;
+      inner.style.transition='none';
+    },{passive:true});
+
+    inner.addEventListener('touchmove',e=>{
+      if(!swiping)return;
+      const diff=e.touches[0].clientX-startX;
+      currentX=Math.min(0,Math.max(diff,-100));
+      inner.style.transform=`translateX(${currentX}px)`;
+    },{passive:true});
+
+    inner.addEventListener('touchend',()=>{
+      swiping=false;
+      inner.style.transition='transform .2s ease';
+      if(currentX<-60){
+        inner.style.transform='translateX(-100%)';
+        const id=wrap.dataset.txid;
+        setTimeout(()=>{
+          txns=txns.filter(x=>x.id!==id);
+          sv();rD();
+          if(curScreen==='3'||document.getElementById('p3').classList.contains('a'))rT();
+          toast('Transaction deleted');
+        },200);
+      } else {
+        inner.style.transform='translateX(0)';
+      }
+    });
+  });
+}
 
 // BACKUP & RESTORE
 function backupData(){
