@@ -65,7 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 .qb{background:var(--c1);border:1px solid var(--bd);border-radius:16px;padding:14px 4px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;border:none;font-family:inherit;transition:transform .12s}
 .qb:active{transform:scale(.92)}
 .qi{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.qi.r{background:rgba(239,68,68,.08)}.qi.g{background:rgba(34,197,94,.08)}.qi.p{background:rgba(168,85,247,.08)}.qi.y{background:rgba(234,179,8,.08)}
+.qi.r{background:rgba(239,68,68,.15);box-shadow:0 0 20px rgba(239,68,68,.3)}.qi.g{background:rgba(34,197,94,.15);box-shadow:0 0 20px rgba(34,197,94,.3)}.qi.p{background:rgba(168,85,247,.08)}.qi.y{background:rgba(234,179,8,.08)}
 .qn{font-size:9px;font-weight:600;color:var(--t2)}
 /* RING */
 .rw{display:flex;align-items:center;gap:16px;padding:16px;background:var(--c1);border:1px solid var(--bd);border-radius:18px;margin-bottom:12px}
@@ -183,6 +183,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 .rec{display:flex;align-items:center;gap:10px;padding:13px;background:var(--c1);border:1px solid var(--bd);border-radius:14px;margin-bottom:8px}
 .rec-i{font-size:20px;width:36px;text-align:center}.rec-f{flex:1}.rec-n{font-size:13px;font-weight:600}.rec-s{font-size:10px;color:var(--t2)}
 .rec-a{font-size:14px;font-weight:700}.rec-x{background:none;border:none;color:var(--t2);opacity:.3;font-size:12px;cursor:pointer;padding:3px}
+/* REMINDERS */
+.rem-card{background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.15);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:13px}
+.rem-icon{font-size:18px;flex-shrink:0}
+.rem-text{flex:1;font-weight:500;line-height:1.4}
+.rem-days{font-size:11px;font-weight:700;color:var(--y);white-space:nowrap}
+/* CHALLENGES */
+.ch-card{border-radius:16px;padding:16px;margin-bottom:10px;position:relative;overflow:hidden}
+.ch-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.ch-desc{font-size:11px;color:var(--t2);margin-bottom:10px}
+.ch-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.ch-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.ch-status{font-size:11px;font-weight:700;margin-top:6px}
+/* STREAKS */
+.str-card{background:var(--c1);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.str-fire{font-size:28px}
+.str-info{flex:1}
+.str-title{font-size:14px;font-weight:700}
+.str-desc{font-size:11px;color:var(--t2);margin-top:2px}
+.str-badge{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700}
 </style>
 </head>
 <body>
@@ -218,8 +237,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 </div>
 <div class="hero-stats" id="heroStats"></div>
 </div>
-<div class="qa"><button class="qb" onclick="tT='e';go(2)"><div class="qi r">➖</div><div class="qn">Expense</div></button><button class="qb" onclick="tT='i';go(2)"><div class="qi g">➕</div><div class="qn">Income</div></button><button class="qb" onclick="go(1)"><div class="qi p">🛍️</div><div class="qn">Shopping</div></button><button class="qb" onclick="oS('budget')"><div class="qi y">🎯</div><div class="qn">Budget</div></button></div>
+<div class="qa"><button class="qb" onclick="tT='e';go(2)" style="border:1px solid rgba(239,68,68,.2);box-shadow:0 0 12px rgba(239,68,68,.1)"><div class="qi r">➖</div><div class="qn">Expense</div></button><button class="qb" onclick="tT='i';go(2)" style="border:1px solid rgba(34,197,94,.2);box-shadow:0 0 12px rgba(34,197,94,.1)"><div class="qi g">➕</div><div class="qn">Income</div></button><button class="qb" onclick="go(1)"><div class="qi p">🛍️</div><div class="qn">Shopping</div></button><button class="qb" onclick="oS('budget')"><div class="qi y">🎯</div><div class="qn">Budget</div></button></div>
 <div id="rings"></div>
+<div id="reminders"></div>
+<div id="streakSec"></div>
+<div id="challengeSec"></div>
 <div id="shopOv"></div>
 <div class="bar-w" id="barW" style="display:none"><div class="bar-t">7-Day Spending</div><div class="bar-r" id="barR"></div></div>
 <div class="sh"><div class="st">Recent Transactions</div><button class="sm" onclick="go(3)">See All →</button></div>
@@ -316,7 +338,7 @@ function rD(){
 const h=new Date().getHours(),nm=prof.name||'';
 document.getElementById('gT').textContent=(h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening')+(nm?', '+nm:'')+' 👋';
 const inc=txns.filter(t=>t.type==='i').reduce((s,t)=>s+t.amount,0),exp=txns.filter(t=>t.type==='e').reduce((s,t)=>s+t.amount,0);
-animateCount('hB',inc-exp);document.getElementById('hI').textContent=fR(inc);document.getElementById('hE').textContent=fR(exp);
+animateCount('hB',inc-exp);animateCount('hI',inc);animateCount('hE',exp);
 
 // Hero mini stats
 const mI=txns.filter(t=>t.type==='i'&&isM(t.date)).reduce((s,t)=>s+t.amount,0);
@@ -332,6 +354,17 @@ document.getElementById('heroStats').innerHTML=`
 let rh='';if(bud.ml>0)rh+=ringH('Monthly Budget',fR(mE)+' / '+fR(bud.ml),Math.min(mE/bud.ml,1),mE>bud.ml*.8?'var(--r)':'var(--g)');
 if(sav.t>0)rh+=ringH(sav.n,fR(sav.s)+' / '+fR(sav.t),Math.min(sav.s/sav.t,1),'var(--cy)');
 document.getElementById('rings').innerHTML=rh;
+
+// Expense Reminders
+const remHtml=renderReminders();
+document.getElementById('reminders').innerHTML=remHtml;
+
+// Spending Streaks
+document.getElementById('streakSec').innerHTML=renderStreaks();
+
+// Savings Challenges
+document.getElementById('challengeSec').innerHTML=renderChallenges(mE);
+
 // Shopping overview
 const pe=items.filter(i=>!i.isBought).length;
 document.getElementById('shopOv').innerHTML=items.length>0?`<div class="so" onclick="go(1)"><div class="so-i">🛒</div><div class="so-f"><div class="so-n">Shopping List</div><div class="so-s">${pe} pending · ${items.filter(i=>i.isBought).length} bought</div></div><div class="so-v">${pe}</div></div>`:'';
@@ -433,6 +466,136 @@ ${rec.length===0?'<div style="font-size:12px;color:var(--t2);text-align:center;p
 <div class="fg"><label>Day of Month (1-28)</label><input type="number" id="rD" min="1" max="28" value="1"></div>
 <button class="fsb" onclick="const a=parseFloat(document.getElementById('rA').value);if(!a)return;rec.push({id:Date.now().toString(),amt:a,type:document.getElementById('rTI').style.background.includes('var(--g)')?'i':'e',cat:document.getElementById('rC').value,note:document.getElementById('rN').value,day:parseInt(document.getElementById('rD').value)||1});sv();rRe();toast('Recurring added')">Add Recurring</button>
 </div>`}
+
+// EXPENSE REMINDERS
+function renderReminders(){
+  const reminders=[];
+  const today=new Date();
+  const dayOfMonth=today.getDate();
+
+  rec.forEach(r=>{
+    if(r.type==='e'){
+      let daysLeft=r.day-dayOfMonth;
+      if(daysLeft<0)daysLeft+=30;
+      if(daysLeft<=7){
+        reminders.push({name:r.note||r.cat,amt:r.amt,days:daysLeft,icon:pI(r.cat)});
+      }
+    }
+  });
+
+  if(reminders.length===0)return'';
+  return`<div class="sh"><div class="st">⏰ Upcoming</div></div>${reminders.map(r=>`<div class="rem-card"><div class="rem-icon">${r.icon}</div><div class="rem-text">${esc(r.name)} — ${fR(r.amt)}</div><div class="rem-days">${r.days===0?'Today!':r.days===1?'Tomorrow':r.days+' days'}</div></div>`).join('')}`;
+}
+
+// SPENDING STREAKS
+function renderStreaks(){
+  const today=new Date();
+  const dailyLimit=bud.ml>0?Math.round(bud.ml/30):500;
+
+  let underBudgetStreak=0;
+  for(let i=0;i<30;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const dayExp=txns.filter(t=>t.type==='e'&&new Date(t.date).toDateString()===d.toDateString()).reduce((s,t)=>s+t.amount,0);
+    if(i===0&&dayExp===0)continue;
+    if(dayExp<=dailyLimit&&dayExp>0)underBudgetStreak++;
+    else if(i>0)break;
+  }
+
+  let noSpendStreak=0;
+  for(let i=0;i<30;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const dayExp=txns.filter(t=>t.type==='e'&&new Date(t.date).toDateString()===d.toDateString()).reduce((s,t)=>s+t.amount,0);
+    if(dayExp===0&&i>0)noSpendStreak++;
+    else if(i>0)break;
+  }
+
+  const todayExp=txns.filter(t=>t.type==='e'&&isD(t.date)).reduce((s,t)=>s+t.amount,0);
+  const isNoSpendToday=todayExp===0;
+
+  if(txns.length===0)return'';
+
+  let html='<div class="sh"><div class="st">🔥 Streaks</div></div>';
+
+  if(underBudgetStreak>0){
+    html+=`<div class="str-card"><div class="str-fire">🔥</div><div class="str-info"><div class="str-title">${underBudgetStreak} day${underBudgetStreak>1?'s':''} under ₹${dailyLimit}/day</div><div class="str-desc">Daily budget streak — keep it going!</div></div><span class="str-badge" style="background:rgba(34,197,94,.15);color:var(--g)">${underBudgetStreak}🔥</span></div>`;
+  }
+
+  if(isNoSpendToday){
+    html+=`<div class="str-card"><div class="str-fire">💎</div><div class="str-info"><div class="str-title">No-Spend Day!</div><div class="str-desc">You haven't spent anything today</div></div><span class="str-badge" style="background:rgba(6,182,212,.15);color:var(--cy)">₹0</span></div>`;
+  }
+
+  if(underBudgetStreak===0&&!isNoSpendToday){
+    html+=`<div class="str-card"><div class="str-fire">💪</div><div class="str-info"><div class="str-title">Start a streak!</div><div class="str-desc">Spend under ₹${dailyLimit} today to begin</div></div><span class="str-badge" style="background:rgba(234,179,8,.15);color:var(--y)">Go!</span></div>`;
+  }
+
+  return html;
+}
+
+// SAVINGS CHALLENGES
+function renderChallenges(monthExp){
+  if(txns.length===0)return'';
+
+  const today=new Date();
+  const daysInMonth=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  const daysPassed=today.getDate();
+  const daysLeft=daysInMonth-daysPassed;
+
+  const challenges=[];
+
+  // Challenge 1: No-Spend Days
+  let noSpendDays=0;
+  for(let i=1;i<=daysPassed;i++){
+    const d=new Date(today.getFullYear(),today.getMonth(),i);
+    const dayExp=txns.filter(t=>t.type==='e'&&new Date(t.date).toDateString()===d.toDateString()).reduce((s,t)=>s+t.amount,0);
+    if(dayExp===0)noSpendDays++;
+  }
+  const noSpendTarget=Math.round(daysInMonth*0.3);
+  challenges.push({
+    title:'💎 No-Spend Day Challenge',
+    desc:`${noSpendTarget} no-spend days this month`,
+    progress:Math.min(noSpendDays/noSpendTarget,1),
+    status:`${noSpendDays}/${noSpendTarget} days`,
+    color:'#06B6D4',
+    bg:'rgba(6,182,212,.08)',
+    border:'rgba(6,182,212,.15)'
+  });
+
+  // Challenge 2: Under Budget
+  if(bud.ml>0){
+    const pct=monthExp/bud.ml;
+    const idealPct=daysPassed/daysInMonth;
+    const onTrack=pct<=idealPct;
+    challenges.push({
+      title:onTrack?'✅ On Budget Track':'⚠️ Budget Watch',
+      desc:`${Math.round(pct*100)}% used, ${Math.round(idealPct*100)}% of month gone`,
+      progress:Math.min(pct,1),
+      status:onTrack?'On Track':'Over pace',
+      color:onTrack?'#22C55E':'#EF4444',
+      bg:onTrack?'rgba(34,197,94,.08)':'rgba(239,68,68,.08)',
+      border:onTrack?'rgba(34,197,94,.15)':'rgba(239,68,68,.15)'
+    });
+  }
+
+  // Challenge 3: Daily Average
+  const avgDaily=daysPassed>0?Math.round(monthExp/daysPassed):0;
+  const targetDaily=bud.ml>0?Math.round(bud.ml/daysInMonth):1000;
+  challenges.push({
+    title:'📊 Daily Average',
+    desc:`Target: ₹${targetDaily}/day · Actual: ₹${avgDaily}/day`,
+    progress:Math.min(avgDaily/targetDaily,1),
+    status:avgDaily<=targetDaily?'Great! 🎉':'Reduce spending',
+    color:avgDaily<=targetDaily?'#22C55E':'#EAB308',
+    bg:avgDaily<=targetDaily?'rgba(34,197,94,.08)':'rgba(234,179,8,.08)',
+    border:avgDaily<=targetDaily?'rgba(34,197,94,.15)':'rgba(234,179,8,.15)'
+  });
+
+  let html='<div class="sh"><div class="st">🏆 Challenges</div></div>';
+  challenges.forEach(c=>{
+    html+=`<div class="ch-card" style="background:${c.bg};border:1px solid ${c.border}"><div class="ch-title">${c.title}</div><div class="ch-desc">${c.desc}</div><div class="ch-bar"><div class="ch-fill" style="width:${Math.round(c.progress*100)}%;background:${c.color}"></div></div><div class="ch-status" style="color:${c.color}">${c.status}</div></div>`;
+  });
+
+  return html;
+}
 
 let catEditIdx=-1,catSelIcon='📦';
 function rCat(){
