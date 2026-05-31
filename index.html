@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="LifeTrack">
 <meta name="theme-color" content="#09090B">
 <title>LifeTrack</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <style>
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(34,197,94,.12)}50%{box-shadow:0 0 40px rgba(34,197,94,.25)}}
@@ -266,6 +268,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="mi" onclick="oS('recurring')"><div class="mii">🔄</div><div class="mit">Recurring Transactions</div><div class="mia">›</div></div>
 <div class="mi" onclick="oS('categories')"><div class="mii">🏷️</div><div class="mit">Manage Categories</div><div class="mia">›</div></div>
 <div class="mi" onclick="xCSV()"><div class="mii">📤</div><div class="mit">Export CSV</div><div class="mia">›</div></div>
+<div class="sl" style="margin-top:20px">BACKUP & RESTORE</div>
+<div class="mi" onclick="backupData()"><div class="mii" style="background:rgba(34,197,94,.08)">📥</div><div class="mit">Backup All Data</div><div class="mia">›</div></div>
+<div class="mi" onclick="document.getElementById('restoreFile').click()"><div class="mii" style="background:rgba(59,130,246,.08)">📤</div><div class="mit">Restore from Backup</div><div class="mia">›</div></div>
+<input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreData(event)">
 <div class="sl" style="margin-top:20px">DANGER ZONE</div>
 <div class="mi" onclick="if(confirm('Clear ALL data? This cannot be undone.')){txns=[];items=[];hist=[];rec=[];sv();rD();rS()}" style="border-color:rgba(239,68,68,.15)"><div class="mii" style="background:rgba(239,68,68,.08)">🗑️</div><div class="mit" style="color:var(--r)">Clear All Data</div></div>
 </div>
@@ -473,7 +479,54 @@ function xCSV(){let csv='Date,Type,Amount,Category,Note\n';txns.forEach(t=>{csv+
 // Process recurring
 (function(){const day=new Date().getDate();rec.forEach(r=>{if(r.day===day){const ex=txns.some(t=>isD(t.date)&&t.note===(r.note||r.cat)&&t.amount===r.amt);if(!ex){txns.unshift({id:Date.now().toString(),amount:r.amt,type:r.type,category:r.cat,note:r.note||r.cat,date:new Date().toISOString()});sv()}}})})();
 
+// BACKUP & RESTORE
+function backupData(){
+  const data={
+    version:'2.0',
+    date:new Date().toISOString(),
+    items,hist,txns,bud,sav,rec,prof,CS,
+    lt3_ob:localStorage.getItem('lt3_ob')
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='LifeTrack_Backup_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+  toast('Backup downloaded! 📥');
+}
+
+function restoreData(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.version){toast('Invalid backup file');return}
+      if(!confirm('Restore from backup? This will replace all current data.'))return;
+      if(data.items)items=data.items;
+      if(data.hist)hist=data.hist;
+      if(data.txns)txns=data.txns;
+      if(data.bud)bud=data.bud;
+      if(data.sav)sav=data.sav;
+      if(data.rec)rec=data.rec;
+      if(data.prof)prof=data.prof;
+      if(data.CS)CS=data.CS;
+      if(data.lt3_ob)localStorage.setItem('lt3_ob','1');
+      sv();rD();rS();
+      toast('Data restored! 🎉');
+    }catch(err){toast('Error reading backup file')}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
 if(localStorage.getItem('lt3_ob'))rD();
+
+// SERVICE WORKER for auto-update
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
