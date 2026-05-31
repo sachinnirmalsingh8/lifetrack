@@ -264,6 +264,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="mi" onclick="oS('budget')"><div class="mii">🎯</div><div class="mit">Budget & Savings</div><div class="mia">›</div></div>
 <div class="mi" onclick="oS('monthly')"><div class="mii">📅</div><div class="mit">Monthly Summary</div><div class="mia">›</div></div>
 <div class="mi" onclick="oS('recurring')"><div class="mii">🔄</div><div class="mit">Recurring Transactions</div><div class="mia">›</div></div>
+<div class="mi" onclick="oS('categories')"><div class="mii">🏷️</div><div class="mit">Manage Categories</div><div class="mia">›</div></div>
 <div class="mi" onclick="xCSV()"><div class="mii">📤</div><div class="mit">Export CSV</div><div class="mia">›</div></div>
 <div class="sl" style="margin-top:20px">DANGER ZONE</div>
 <div class="mi" onclick="if(confirm('Clear ALL data? This cannot be undone.')){txns=[];items=[];hist=[];rec=[];sv();rD();rS()}" style="border-color:rgba(239,68,68,.15)"><div class="mii" style="background:rgba(239,68,68,.08)">🗑️</div><div class="mit" style="color:var(--r)">Clear All Data</div></div>
@@ -275,14 +276,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="sub" id="sub-budget"><div class="sub-h"><button class="sub-b" onclick="cS('budget')">‹</button><div class="sub-t">Budget & Savings</div></div><div class="sub-d" id="buB"></div></div>
 <div class="sub" id="sub-monthly"><div class="sub-h"><button class="sub-b" onclick="cS('monthly')">‹</button><div class="sub-t">Monthly Summary</div></div><div class="sub-d" id="moB"></div></div>
 <div class="sub" id="sub-recurring"><div class="sub-h"><button class="sub-b" onclick="cS('recurring')">‹</button><div class="sub-t">Recurring</div></div><div class="sub-d" id="reB"></div></div>
+<div class="sub" id="sub-categories"><div class="sub-h"><button class="sub-b" onclick="cS('categories')">‹</button><div class="sub-t">Manage Categories</div></div><div class="sub-d" id="catB"></div></div>
 
 <script>
 // DATA
 let items=J('lt3_i',[]),hist=J('lt3_h',[]),txns=J('lt3_t',[]),bud=J('lt3_b',{ml:0}),sav=J('lt3_s',{n:'My Goal',t:0,s:0}),rec=J('lt3_r',[]),prof=J('lt3_p',{name:''});
 let tT='e',sC='Food',sTb='all',tF='all';
 function J(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
-function sv(){['lt3_i','lt3_h','lt3_t','lt3_b','lt3_s','lt3_r','lt3_p'].forEach((k,i)=>localStorage.setItem(k,JSON.stringify([items,hist,txns,bud,sav,rec,prof][i])))}
-const CS=[{n:'Food',i:'🍕'},{n:'Transport',i:'🚗'},{n:'Shopping',i:'🛍️'},{n:'Bills',i:'📱'},{n:'Health',i:'💊'},{n:'Fun',i:'🎬'},{n:'Education',i:'📚'},{n:'Rent',i:'🏠'},{n:'Recharge',i:'📶'},{n:'Transfer',i:'🔄'},{n:'Other',i:'📦'}];
+function sv(){['lt3_i','lt3_h','lt3_t','lt3_b','lt3_s','lt3_r','lt3_p'].forEach((k,i)=>localStorage.setItem(k,JSON.stringify([items,hist,txns,bud,sav,rec,prof][i])));localStorage.setItem('lt3_cs',JSON.stringify(CS))}
+const DEF_CS=[{n:'Food',i:'🍕'},{n:'Transport',i:'🚗'},{n:'Shopping',i:'🛍️'},{n:'Bills',i:'📱'},{n:'Health',i:'💊'},{n:'Fun',i:'🎬'},{n:'Education',i:'📚'},{n:'Rent',i:'🏠'},{n:'Recharge',i:'📶'},{n:'Transfer',i:'🔄'},{n:'Other',i:'📦'}];
+let CS=J('lt3_cs',DEF_CS);
+const CAT_ICONS=['🍕','🚗','🛍️','📱','💊','🎬','📚','🏠','📶','🔄','📦','✈️','🎮','👕','🍔','☕','🏋️','🎁','💇','🐾','🔧','🎨','🎓','💻','🏥','🍿','🧹','🚌','⛽','📝'];
 const CKW={groceries:['rice','wheat','flour','oil','sugar','salt','dal','tea','coffee','bread','noodles','pasta'],vegetables:['tomato','onion','potato','carrot','beans','brinjal','cabbage','spinach','cucumber','garlic','ginger'],fruits:['apple','banana','orange','mango','grape','watermelon','lemon','coconut'],dairy:['milk','curd','butter','ghee','cheese','paneer','cream'],snacks:['chips','biscuits','chocolate','nuts','cashew','cake','sweet','murukku'],household:['soap','shampoo','detergent','brush','paste','tissue','towel','bulb','handwash','sanitizer']};
 const SUGG=['Milk','Rice','Eggs','Bread','Tomato','Onion','Oil','Sugar','Tea','Curd','Butter','Soap'];
 function dCt(n){const l=n.toLowerCase();for(const[c,k]of Object.entries(CKW)){if(k.some(w=>l.includes(w)))return c}return'other'}
@@ -397,7 +401,7 @@ let h='';Object.entries(gr).forEach(([dk,ts])=>{h+=`<div class="sl">${dk}</div>`
 document.getElementById('tL').innerHTML=h}
 
 // MORE SUBS
-function oS(id){document.getElementById('sub-'+id).classList.add('sh');({profile:rPr,shopHist:rSH,budget:rBu,monthly:rMo,recurring:rRe})[id]?.()}
+function oS(id){document.getElementById('sub-'+id).classList.add('sh');({profile:rPr,shopHist:rSH,budget:rBu,monthly:rMo,recurring:rRe,categories:rCat})[id]?.()}
 function cS(id){document.getElementById('sub-'+id).classList.remove('sh')}
 
 function rPr(){document.getElementById('prB').innerHTML=`<div class="gc"><div class="fg"><label>Your Name</label><input id="prN" value="${prof.name}" placeholder="Enter your name"></div><button class="fsb" onclick="prof.name=document.getElementById('prN').value;sv();rD();toast('Name saved!')">Save</button></div><div style="margin-top:20px;text-align:center;font-size:11px;color:var(--t2)">LifeTrack v2.0 Premium<br>Made with ❤️</div>`}
@@ -423,6 +427,46 @@ ${rec.length===0?'<div style="font-size:12px;color:var(--t2);text-align:center;p
 <div class="fg"><label>Day of Month (1-28)</label><input type="number" id="rD" min="1" max="28" value="1"></div>
 <button class="fsb" onclick="const a=parseFloat(document.getElementById('rA').value);if(!a)return;rec.push({id:Date.now().toString(),amt:a,type:document.getElementById('rTI').style.background.includes('var(--g)')?'i':'e',cat:document.getElementById('rC').value,note:document.getElementById('rN').value,day:parseInt(document.getElementById('rD').value)||1});sv();rRe();toast('Recurring added')">Add Recurring</button>
 </div>`}
+
+let catEditIdx=-1,catSelIcon='📦';
+function rCat(){
+  catEditIdx=-1;
+  document.getElementById('catB').innerHTML=`
+<div class="sl">YOUR CATEGORIES</div>
+${CS.map((c,i)=>`<div class="rec"><div class="rec-i">${c.i}</div><div class="rec-f"><div class="rec-n">${esc(c.n)}</div></div><button class="rec-x" style="font-size:16px;opacity:.5;margin-right:4px" onclick="editCatAt(${i})">✎</button><button class="rec-x" style="font-size:14px;opacity:.5" onclick="delCat(${i})">✕</button></div>`).join('')}
+<div class="sl" style="margin-top:20px">ADD NEW CATEGORY</div>
+<div class="gc">
+<div class="fg"><label>Category Name</label><input id="catN" placeholder="e.g. Gym, Petrol, EMI"></div>
+<div class="fg"><label>Icon</label><div id="catIconPick" style="display:flex;gap:6px;flex-wrap:wrap">${CAT_ICONS.map(ic=>`<button style="width:36px;height:36px;border-radius:10px;border:2px solid ${ic===catSelIcon?'var(--g)':'transparent'};background:${ic===catSelIcon?'rgba(34,197,94,.1)':'var(--c2)'};font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="catSelIcon='${ic}';rCat()">${ic}</button>`).join('')}</div></div>
+<button class="fsb" onclick="addCat()">+ Add Category</button>
+</div>
+<div style="text-align:center;margin-top:16px"><button style="background:var(--c1);border:1px solid var(--bd);color:var(--t2);padding:10px 20px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" onclick="CS=[...DEF_CS];sv();rCat();toast('Categories reset!')">Reset to Default</button></div>`
+}
+
+function addCat(){
+  const name=document.getElementById('catN').value.trim();
+  if(!name)return;
+  if(CS.some(c=>c.n.toLowerCase()===name.toLowerCase())){toast('Category already exists');return}
+  CS.push({n:name,i:catSelIcon});
+  sv();catSelIcon='📦';rCat();toast(name+' added!')
+}
+
+function delCat(i){
+  if(CS.length<=1){toast('Need at least 1 category');return}
+  const name=CS[i].n;
+  if(!confirm('Delete "'+name+'" category?'))return;
+  CS.splice(i,1);
+  if(sC===name)sC=CS[0].n;
+  sv();rCat();toast(name+' deleted')
+}
+
+function editCatAt(i){
+  const c=CS[i];
+  const newName=prompt('Edit category name:',c.n);
+  if(!newName||!newName.trim())return;
+  CS[i].n=newName.trim();
+  sv();rCat();toast('Category updated')
+}
 
 function xCSV(){let csv='Date,Type,Amount,Category,Note\n';txns.forEach(t=>{csv+=`${new Date(t.date).toLocaleDateString('en-IN')},${t.type==='i'?'Income':'Expense'},${t.amount},${t.category},"${t.note||''}"\n`});const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='LifeTrack.csv';a.click();toast('CSV exported!')}
 
