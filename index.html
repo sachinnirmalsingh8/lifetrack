@@ -205,6 +205,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 .str-title{font-size:14px;font-weight:700}
 .str-desc{font-size:11px;color:var(--t2);margin-top:2px}
 .str-badge{padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700}
+/* DRAG REORDER */
+.drag-section{position:relative;transition:transform .2s ease,opacity .2s}
+.drag-handle{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;cursor:grab;z-index:5;font-size:12px;color:var(--t2);opacity:.3;transition:opacity .2s}
+.drag-handle:active{cursor:grabbing;opacity:.8}
+.drag-section:active .drag-handle{opacity:.8}
+.drag-section.dragging{opacity:.5;transform:scale(.96);z-index:50}
+.drag-section.drag-over{border-top:2px solid var(--g);margin-top:-2px}
+.edit-mode-btn{background:var(--c1);border:1px solid var(--bd);color:var(--t2);font-size:11px;font-weight:600;padding:6px 14px;border-radius:100px;cursor:pointer;font-family:inherit;transition:all .15s}
+.edit-mode-btn.active{background:var(--g);color:#fff;border-color:var(--g)}
 </style>
 </head>
 <body>
@@ -230,7 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 
 <!-- HOME -->
 <div class="pg a" id="p0">
-<div class="greet"><h1 id="gT"></h1><p>Track your money. Build your future.</p></div>
+<div class="greet" style="display:flex;justify-content:space-between;align-items:flex-start"><div><h1 id="gT"></h1><p>Track your money. Build your future.</p></div><button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✎ Edit</button></div>
 <div class="hero">
 <div class="hl">Total Balance</div>
 <div class="ha" id="hB">₹0</div>
@@ -241,15 +250,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="hero-stats" id="heroStats"></div>
 </div>
 <div class="qa"><button class="qb" onclick="tT='e';go(2)" style="border:1px solid rgba(239,68,68,.2);box-shadow:0 0 12px rgba(239,68,68,.1)"><div class="qi r">➖</div><div class="qn">Expense</div></button><button class="qb" onclick="tT='i';go(2)" style="border:1px solid rgba(34,197,94,.2);box-shadow:0 0 12px rgba(34,197,94,.1)"><div class="qi g">➕</div><div class="qn">Income</div></button><button class="qb" onclick="go(1)"><div class="qi p">🛍️</div><div class="qn">Shopping</div></button><button class="qb" onclick="oS('budget')"><div class="qi y">🎯</div><div class="qn">Budget</div></button></div>
-<div id="rings"></div>
-<div id="reminders"></div>
-<div id="streakSec"></div>
-<div id="challengeSec"></div>
-<div id="shopOv"></div>
-<div class="bar-w" id="barW" style="display:none"><div class="bar-t">7-Day Spending</div><div class="bar-r" id="barR"></div></div>
-<div class="sh"><div class="st">Recent Transactions</div><button class="sm" onclick="go(3)">See All →</button></div>
-<div id="rTx"></div>
-<div id="mCd"></div>
+<div id="reorderZone"></div>
 </div>
 
 <!-- SHOPPING -->
@@ -337,13 +338,25 @@ if(localStorage.getItem('lt3_ob')){document.getElementById('onboard').classList.
 function go(i){document.querySelectorAll('.pg').forEach((p,x)=>p.classList.toggle('a',x===i));document.querySelectorAll('.tb').forEach((b,x)=>{if(x===2)return;const idx=x>2?x-1:x;b.classList.toggle('a',idx===i)});if(i===0)rD();if(i===1)rS();if(i===2){rAP();setTimeout(()=>document.getElementById('tA').focus(),300)};if(i===3){rIn();rT()};window.scrollTo({top:0,behavior:'smooth'})}
 
 // HOME
+const DEF_ORDER=['rings','reminders','streaks','challenges','shop','barchart','recent','monthly'];
+let sectionOrder=J('lt3_order',DEF_ORDER);
+let editMode=false;
+
+function toggleEditMode(){
+  editMode=!editMode;
+  const btn=document.getElementById('editModeBtn');
+  btn.textContent=editMode?'✓ Done':'✎ Edit';
+  btn.classList.toggle('active',editMode);
+  document.querySelectorAll('.drag-handle').forEach(h=>h.style.display=editMode?'flex':'none');
+  if(!editMode)initDragOrder();
+}
+
 function rD(){
 const h=new Date().getHours(),nm=prof.name||'';
 document.getElementById('gT').textContent=(h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening')+(nm?', '+nm:'')+' 👋';
 const inc=txns.filter(t=>t.type==='i').reduce((s,t)=>s+t.amount,0),exp=txns.filter(t=>t.type==='e').reduce((s,t)=>s+t.amount,0);
 animateCount('hB',inc-exp);animateCount('hI',inc);animateCount('hE',exp);
 
-// Hero mini stats
 const mI=txns.filter(t=>t.type==='i'&&isM(t.date)).reduce((s,t)=>s+t.amount,0);
 const mE=txns.filter(t=>t.type==='e'&&isM(t.date)).reduce((s,t)=>s+t.amount,0);
 const savPct=mI>0?Math.round((mI-mE)/mI*100):0;
@@ -353,35 +366,101 @@ document.getElementById('heroStats').innerHTML=`
 <div class="hero-stat"><div class="hero-stat-val" style="color:${savPct>=0?'var(--g)':'var(--r)'}">${savPct}%</div><div class="hero-stat-lbl">Savings</div></div>
 <div class="hero-stat"><div class="hero-stat-val" style="color:var(--y)">${streak} 🔥</div><div class="hero-stat-lbl">Streak</div></div>`;
 
+// Build section contents
+const sections={};
+
 // Rings
 let rh='';if(bud.ml>0)rh+=ringH('Monthly Budget',fR(mE)+' / '+fR(bud.ml),Math.min(mE/bud.ml,1),mE>bud.ml*.8?'var(--r)':'var(--g)');
 if(sav.t>0)rh+=ringH(sav.n,fR(sav.s)+' / '+fR(sav.t),Math.min(sav.s/sav.t,1),'var(--cy)');
-document.getElementById('rings').innerHTML=rh;
+sections.rings=rh;
 
-// Expense Reminders
-const remHtml=renderReminders();
-document.getElementById('reminders').innerHTML=remHtml;
+// Reminders
+sections.reminders=renderReminders();
 
-// Spending Streaks
-document.getElementById('streakSec').innerHTML=renderStreaks();
+// Streaks
+sections.streaks=renderStreaks();
 
-// Savings Challenges
-document.getElementById('challengeSec').innerHTML=renderChallenges(mE);
+// Challenges
+sections.challenges=renderChallenges(mE);
 
-// Shopping overview
+// Shopping
 const pe=items.filter(i=>!i.isBought).length;
-document.getElementById('shopOv').innerHTML=items.length>0?`<div class="so" onclick="go(1)"><div class="so-i">🛒</div><div class="so-f"><div class="so-n">Shopping List</div><div class="so-s">${pe} pending · ${items.filter(i=>i.isBought).length} bought</div></div><div class="so-v">${pe}</div></div>`:'';
+sections.shop=items.length>0?`<div class="so" onclick="go(1)"><div class="so-i">🛒</div><div class="so-f"><div class="so-n">Shopping List</div><div class="so-s">${pe} pending · ${items.filter(i=>i.isBought).length} bought</div></div><div class="so-v">${pe}</div></div>`:'';
+
 // Bar chart
 const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d)}
 const vals=days.map(d=>txns.filter(t=>t.type==='e'&&new Date(t.date).toDateString()===d.toDateString()).reduce((s,t)=>s+t.amount,0));
 const mx=Math.max(...vals,1);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-if(vals.some(v=>v>0)){document.getElementById('barW').style.display='block';document.getElementById('barR').innerHTML=days.map((d,i)=>`<div class="bar-c"><div class="bar-b" style="height:${Math.max(vals[i]/mx*80,2)}px"></div><div class="bar-l">${dn[d.getDay()]}</div></div>`).join('')}else document.getElementById('barW').style.display='none';
+sections.barchart=vals.some(v=>v>0)?`<div class="bar-w" style="display:block"><div class="bar-t">7-Day Spending</div><div class="bar-r">${days.map((d,i)=>`<div class="bar-c"><div class="bar-b" style="height:${Math.max(vals[i]/mx*80,2)}px"></div><div class="bar-l">${dn[d.getDay()]}</div></div>`).join('')}</div></div>`:'';
+
 // Recent
-const rc=txns.slice(0,5);document.getElementById('rTx').innerHTML=rc.length===0?'<div class="emp"><div class="emp-i">💳</div><h3>No transactions yet</h3><p>Tap + to add your first</p></div>':rc.map(t=>{const ii=t.type==='i';const ds=isD(t.date)?'Today':new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});return swipeTx(t,ii,ds)}).join('');
-initSwipe();
-// Month
+const rc=txns.slice(0,5);
+sections.recent=`<div class="sh"><div class="st">Recent Transactions</div><button class="sm" onclick="go(3)">See All →</button></div>`+(rc.length===0?'<div class="emp"><div class="emp-i">💳</div><h3>No transactions yet</h3><p>Tap + to add your first</p></div>':rc.map(t=>{const ii=t.type==='i';const ds=isD(t.date)?'Today':new Date(t.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});return swipeTx(t,ii,ds)}).join(''));
+
+// Monthly
 const mS=mI-mE,pct=mI>0?Math.round(mS/mI*100):0;
-document.getElementById('mCd').innerHTML=mI>0||mE>0?`<div class="mc"><div class="mt">📅 ${new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div><div class="mr"><span style="color:var(--t2)">Income</span><span class="mv" style="color:var(--g)">${fR(mI)}</span></div><div class="mr"><span style="color:var(--t2)">Expense</span><span class="mv" style="color:var(--r)">${fR(mE)}</span></div><div class="mr"><span style="color:var(--t2)">Savings</span><span class="mv" style="color:var(--g)">${fR(Math.max(mS,0))}</span></div><div class="mb"><div class="mf" style="width:${mI>0?Math.min(mE/mI*100,100):0}%;background:${mE>mI*.8?'var(--r)':'var(--g)'}"></div></div>${pct>0?`<div class="mn">You've saved ${pct}% of your income 🎉</div>`:''}</div>`:''
+sections.monthly=mI>0||mE>0?`<div class="mc"><div class="mt">📅 ${new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div><div class="mr"><span style="color:var(--t2)">Income</span><span class="mv" style="color:var(--g)">${fR(mI)}</span></div><div class="mr"><span style="color:var(--t2)">Expense</span><span class="mv" style="color:var(--r)">${fR(mE)}</span></div><div class="mr"><span style="color:var(--t2)">Savings</span><span class="mv" style="color:var(--g)">${fR(Math.max(mS,0))}</span></div><div class="mb"><div class="mf" style="width:${mI>0?Math.min(mE/mI*100,100):0}%;background:${mE>mI*.8?'var(--r)':'var(--g)'}"></div></div>${pct>0?`<div class="mn">You've saved ${pct}% of your income 🎉</div>`:''}</div>`:'';
+
+// Render in order
+const labels={rings:'📊 Budget',reminders:'⏰ Reminders',streaks:'🔥 Streaks',challenges:'🏆 Challenges',shop:'🛒 Shopping',barchart:'📈 Weekly Chart',recent:'💳 Transactions',monthly:'📅 Monthly'};
+const zone=document.getElementById('reorderZone');
+let zoneHtml='';
+sectionOrder.forEach(key=>{
+  if(!sections[key]||!sections[key].trim())return;
+  const showHandle=editMode?'flex':'none';
+  zoneHtml+=`<div class="drag-section" data-section="${key}"><div class="drag-handle" style="display:${showHandle}" title="Drag to reorder">⠿</div>${sections[key]}</div>`;
+});
+zone.innerHTML=zoneHtml;
+initSwipe();
+if(editMode)initDragOrder();
+}
+
+function initDragOrder(){
+  const zone=document.getElementById('reorderZone');
+  const items=zone.querySelectorAll('.drag-section');
+  let dragEl=null;
+
+  items.forEach(item=>{
+    const handle=item.querySelector('.drag-handle');
+    let startY=0,startIdx=0;
+
+    handle.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      dragEl=item;
+      dragEl.classList.add('dragging');
+      startY=e.touches[0].clientY;
+      startIdx=[...zone.children].indexOf(item);
+    });
+
+    handle.addEventListener('touchmove',e=>{
+      e.preventDefault();
+      if(!dragEl)return;
+      const touch=e.touches[0];
+      const siblings=[...zone.querySelectorAll('.drag-section:not(.dragging)')];
+      siblings.forEach(s=>s.classList.remove('drag-over'));
+      const target=siblings.find(s=>{
+        const rect=s.getBoundingClientRect();
+        return touch.clientY>rect.top&&touch.clientY<rect.bottom;
+      });
+      if(target)target.classList.add('drag-over');
+    });
+
+    handle.addEventListener('touchend',e=>{
+      if(!dragEl)return;
+      const overEl=zone.querySelector('.drag-over');
+      if(overEl&&overEl!==dragEl){
+        const allSections=[...zone.querySelectorAll('.drag-section')];
+        const fromIdx=allSections.indexOf(dragEl);
+        const toIdx=allSections.indexOf(overEl);
+        zone.insertBefore(dragEl,toIdx>fromIdx?overEl.nextSibling:overEl);
+        sectionOrder=[...zone.querySelectorAll('.drag-section')].map(s=>s.dataset.section);
+        localStorage.setItem('lt3_order',JSON.stringify(sectionOrder));
+        toast('Layout saved');
+      }
+      zone.querySelectorAll('.drag-section').forEach(s=>{s.classList.remove('dragging');s.classList.remove('drag-over')});
+      dragEl=null;
+    });
+  });
 }
 
 function calcStreak(){
