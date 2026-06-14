@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'lifetrack-v2.1';
+const CACHE_VERSION = 'lifetrack-v3.0';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
