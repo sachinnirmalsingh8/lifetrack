@@ -236,7 +236,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="tab-bar" id="tabBar" style="display:none">
 <button class="tb a" onclick="go(0)"><span class="ti">📊</span>Home</button>
 <button class="tb" onclick="go(1)"><span class="ti">🛒</span>Shop</button>
-<div class="tb-c"><button class="fab" onclick="go(2)">+</button></div>
+<div class="tb-c"><button class="fab" id="fab" onclick="event.stopPropagation();go(2)">+</button></div>
 <button class="tb" onclick="go(3)"><span class="ti">📈</span>Insights</button>
 <button class="tb" onclick="go(4)"><span class="ti">⚙️</span>More</button>
 </div>
@@ -340,7 +340,17 @@ function startApp(){const n=document.getElementById('obName').value.trim();if(n)
 if(localStorage.getItem('lt3_ob')){document.getElementById('onboard').classList.add('hide');document.getElementById('tabBar').style.display='flex'}
 
 // TABS
-function go(i){document.querySelectorAll('.pg').forEach((p,x)=>p.classList.toggle('a',x===i));document.querySelectorAll('.tb').forEach((b,x)=>{if(x===2)return;const idx=x>2?x-1:x;b.classList.toggle('a',idx===i)});if(i===0)rD();if(i===1)rS();if(i===2){rAP();setTimeout(()=>document.getElementById('tA').focus(),300)};if(i===3){rIn();rT()};window.scrollTo({top:0,behavior:'smooth'})}
+function go(i){
+  document.querySelectorAll('.pg').forEach((p,x)=>p.classList.toggle('a',x===i));
+  document.querySelectorAll('.tb').forEach((b,x)=>{if(x===2)return;const idx=x>2?x-1:x;b.classList.toggle('a',idx===i)});
+  const fab=document.getElementById('fab');
+  if(fab)fab.style.display=(i===0||i===1)?'flex':'none';
+  if(i===0)rD();
+  else if(i===1)rS();
+  else if(i===2){rAP();setTimeout(()=>{const inp=document.getElementById('tA');if(inp)inp.focus()},300)}
+  else if(i===3){rIn();rT()}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
 // HOME
 const DEF_ORDER=['rings','reminders','streaks','challenges','shop','barchart','recent','monthly'];
