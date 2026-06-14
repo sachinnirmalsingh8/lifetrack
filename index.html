@@ -269,7 +269,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 </div>
 
 <!-- ADD (popup sheet) -->
-<div class="sub" id="addSheet" style="background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeAdd()">
+<div class="sub" id="addSheet" style="background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;position:fixed;inset:0;z-index:200;overscroll-behavior:contain" onclick="if(event.target===this)closeAdd()">
 <div style="background:var(--bg);border-radius:24px 24px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom);animation:slideUp .3s ease">
 <div style="width:36px;height:5px;background:rgba(255,255,255,.15);border-radius:3px;margin:10px auto 0"></div>
 <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px">
@@ -368,11 +368,13 @@ function openAdd(){
   rAP();
   const sheet=document.getElementById('addSheet');
   sheet.style.display='flex';
+  document.body.style.overflow='hidden';
   setTimeout(()=>{const inp=document.getElementById('tA');if(inp)inp.focus()},300);
 }
 
 function closeAdd(){
   document.getElementById('addSheet').style.display='none';
+  document.body.style.overflow='';
 }
 
 // HOME
