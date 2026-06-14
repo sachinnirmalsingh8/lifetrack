@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 <style>
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(34,197,94,.12)}50%{box-shadow:0 0 40px rgba(34,197,94,.25)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 @keyframes countUp{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
@@ -267,9 +268,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div id="sL"></div><div id="sFt"></div>
 </div>
 
-<!-- ADD -->
-<div class="pg" id="p2">
-<h1 style="font-size:22px;font-weight:800;text-align:center;margin-bottom:10px">Add Transaction</h1>
+<!-- ADD (popup sheet) -->
+<div class="sub" id="addSheet" style="background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeAdd()">
+<div style="background:var(--bg);border-radius:24px 24px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom);animation:slideUp .3s ease">
+<div style="width:36px;height:5px;background:rgba(255,255,255,.15);border-radius:3px;margin:10px auto 0"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px">
+<h2 style="font-size:20px;font-weight:800">Add Transaction</h2>
+<button style="width:30px;height:30px;border-radius:50%;border:none;background:var(--c2);color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="closeAdd()">&times;</button>
+</div>
+<div style="padding:0 20px 24px">
 <div class="atp"><button class="a" id="aE" onclick="setTT('e')">Expense</button><button id="aIN" onclick="setTT('i')">Income</button></div>
 <div class="ata"><label>💰 Amount (₹)</label><input type="number" id="tA" placeholder="0" inputmode="decimal"></div>
 <div id="cG"></div>
@@ -277,6 +284,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,san
 <div class="atf"><label>📅 Date</label><input type="date" id="tD"></div>
 <button class="ats" onclick="addTx()">+ Add Transaction</button>
 </div>
+</div>
+</div>
+
+<!-- keep p2 as hidden placeholder so go() index stays correct -->
+<div class="pg" id="p2" style="display:none!important"></div>
 
 <!-- INSIGHTS -->
 <div class="pg" id="p3">
@@ -341,15 +353,26 @@ if(localStorage.getItem('lt3_ob')){document.getElementById('onboard').classList.
 
 // TABS
 function go(i){
+  if(i===2){openAdd();return;}
   document.querySelectorAll('.pg').forEach((p,x)=>p.classList.toggle('a',x===i));
   document.querySelectorAll('.tb').forEach((b,x)=>{if(x===2)return;const idx=x>2?x-1:x;b.classList.toggle('a',idx===i)});
   const fab=document.getElementById('fab');
-  if(fab)fab.style.display=(i===0||i===1)?'flex':'none';
+  if(fab)fab.style.display='flex';
   if(i===0)rD();
   else if(i===1)rS();
-  else if(i===2){rAP();setTimeout(()=>{const inp=document.getElementById('tA');if(inp)inp.focus()},300)}
   else if(i===3){rIn();rT()}
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function openAdd(){
+  rAP();
+  const sheet=document.getElementById('addSheet');
+  sheet.style.display='flex';
+  setTimeout(()=>{const inp=document.getElementById('tA');if(inp)inp.focus()},300);
+}
+
+function closeAdd(){
+  document.getElementById('addSheet').style.display='none';
 }
 
 // HOME
@@ -500,7 +523,7 @@ function shL(){const p=items.filter(i=>!i.isBought);let t='🛒 Shopping List\n\
 function rAP(){document.getElementById('tD').value=new Date().toISOString().split('T')[0];document.getElementById('aE').classList.toggle('a',tT==='e');document.getElementById('aIN').classList.toggle('a',tT==='i');
 document.getElementById('cG').innerHTML=tT==='i'?'':`<div class="sl">CATEGORY</div><div class="cg">${CS.map(c=>`<button class="cgb${sC===c.n?' sel':''}" onclick="sC='${c.n}';rAP()"><div class="cgi">${c.i}</div><div class="cgn">${c.n}</div></button>`).join('')}</div>`}
 function setTT(t){tT=t;rAP()}
-function addTx(){const a=parseFloat(document.getElementById('tA').value);if(!a||a<=0)return;txns.unshift({id:Date.now().toString(),amount:a,type:tT,category:tT==='i'?'Salary':sC,note:document.getElementById('tN').value,date:document.getElementById('tD').value||new Date().toISOString()});sv();document.getElementById('tA').value='';document.getElementById('tN').value='';toast((tT==='i'?'+':'-')+fR(a));go(0)}
+function addTx(){const a=parseFloat(document.getElementById('tA').value);if(!a||a<=0)return;txns.unshift({id:Date.now().toString(),amount:a,type:tT,category:tT==='i'?'Salary':sC,note:document.getElementById('tN').value,date:document.getElementById('tD').value||new Date().toISOString()});sv();document.getElementById('tA').value='';document.getElementById('tN').value='';toast((tT==='i'?'+':'-')+fR(a));closeAdd();rD()}
 
 // INSIGHTS - BIGGER CHART
 function rIn(){
