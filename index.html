@@ -799,7 +799,17 @@ function restoreData(e){
   e.target.value='';
 }
 
-if(localStorage.getItem('lt3_ob'))rD();
+if(localStorage.getItem('lt3_ob')){
+  rD();
+  // URL parameter support for shortcuts
+  const params=new URLSearchParams(window.location.search);
+  const page=params.get('page');
+  if(page==='add'){tT='e';go(2);}
+  else if(page==='add-income'){tT='i';go(2);}
+  else if(page==='add-expense'){tT='e';go(2);}
+  else if(page==='shop'){go(1);}
+  else if(page==='insights'){go(3);}
+}
 
 // SERVICE WORKER for auto-update
 if('serviceWorker' in navigator){
